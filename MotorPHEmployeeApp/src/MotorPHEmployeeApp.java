@@ -19,12 +19,12 @@ public class MotorPHEmployeeApp {
     private JFrame mainFrame;
     private JTable employeeTable;
     
-    // Add attendance tracking
+    
     private final Map<String, List<AttendanceRecord>> attendanceMap = new HashMap<>();
     private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("M/d/yy");
     private static final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:mm");
 
-    // Inner class for attendance records
+
     private static class AttendanceRecord {
         String date;
         LocalDate parsedDate;
@@ -41,7 +41,7 @@ public class MotorPHEmployeeApp {
         private LocalDate parseDate(String dateStr) {
     try {
         LocalDate date = LocalDate.parse(dateStr, dateFormatter);
-        // Handle 2-digit years properly
+        
         if (date.getYear() < 100) {
             if (date.getYear() < 50) {
                 date = date.withYear(date.getYear() + 2000);
@@ -52,7 +52,7 @@ public class MotorPHEmployeeApp {
         System.out.println("Parsed date string '" + dateStr + "' to LocalDate: " + date);
         return date;
     } catch (DateTimeParseException e) {
-        System.out.println("❌ Failed to parse date: " + dateStr);
+        System.out.println(" Failed to parse date: " + dateStr);
         return null;
     }
 }
@@ -133,7 +133,7 @@ public class MotorPHEmployeeApp {
         mainFrame.add(actionButtonPanel, BorderLayout.EAST);
         mainFrame.setVisible(true);
 
-        // Load both employee and attendance data
+        
         loadEmployeeDataFromCSV("C:\\Users\\Michiko\\Desktop\\MotorPHEmployeeApp\\MotorPHEmployeeApp\\src\\employee_data.csv");
         loadAttendanceDataFromCSV("C:\\Users\\Michiko\\Desktop\\MotorPHEmployeeApp\\MotorPHEmployeeApp\\src\\attendance_record.csv");
     }
@@ -162,7 +162,7 @@ public class MotorPHEmployeeApp {
                 LocalTime loginTime = LocalTime.parse(login, timeFormatter);
                 LocalTime logoutTime = LocalTime.parse(logout, timeFormatter);
 
-                // 🚫 Skip if logout is before login
+                
                 if (logoutTime.isBefore(loginTime)) {
                     System.out.println("Skipping invalid login/logout: " + login + " - " + logout + " for employee " + employeeId);
                     continue;
@@ -170,7 +170,7 @@ public class MotorPHEmployeeApp {
 
                 double totalHours = Duration.between(loginTime, logoutTime).toMinutes() / 60.0;
 
-                // Grace period
+                
                 LocalTime gracePeriod = LocalTime.of(8, 10);
                 double deductedHours = 0.0;
                 if (loginTime.isAfter(gracePeriod)) {
@@ -197,7 +197,7 @@ public class MotorPHEmployeeApp {
             }
         }
 
-        // ✅ Now properly outside the while loop
+        
         System.out.println("Total attendance records loaded: " + recordCount);
         System.out.println("Employees with attendance data: " + attendanceMap.keySet());
 
@@ -321,7 +321,7 @@ public class MotorPHEmployeeApp {
     }
 
     private void showBasicSalaryComputation(String empId, double basicSalary) {
-        // Find employee data
+        // Finds employee data
         String[] employeeInfo = employeeData.stream()
             .filter(e -> e[0].equals(empId))
             .findFirst()
@@ -378,7 +378,7 @@ public class MotorPHEmployeeApp {
         
         int year = 2024;
 
-    // ✅ Keep dynamic month parsing from user's selected dropdown/input
+    
     Month month;
     try {
         month = Month.valueOf(monthName.toUpperCase());
@@ -436,7 +436,7 @@ public class MotorPHEmployeeApp {
             report.append("  Gross Pay: ").append(String.format("₱%,.2f", weeklyGross)).append("\n");
             report.append("  Late Deduction: ").append(String.format("₱%,.2f", weeklyDeductionAmount)).append("\n");
 
-            // Apply deductions only on 4th week
+            
             if (weekOffset == 3) {
                 double sss = calculateSSS(basicSalary);
                 double philhealth = basicSalary * 0.03;
@@ -465,7 +465,7 @@ public class MotorPHEmployeeApp {
             totalDeductions += weeklyDeductions;
         }
 
-        // Add allowances at the end
+        
         double rice = Double.parseDouble(employeeInfo[10]);
         double phone = Double.parseDouble(employeeInfo[11]);
         double clothing = Double.parseDouble(employeeInfo[12]);
@@ -570,7 +570,7 @@ public class MotorPHEmployeeApp {
                         employeeData.add(employee);
                         System.out.println("Loaded employee: " + columns[0] + " - " + columns[2] + " " + columns[1]);
                     } catch (NumberFormatException e) {
-                        // Skip rows with invalid number formats
+                        
                         System.err.println("Skipping row due to number format error: " + line);
                     }
                 }
