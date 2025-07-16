@@ -2,8 +2,19 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -11,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 public class MotorPHEmployeeApp {
 
@@ -100,7 +112,19 @@ public class MotorPHEmployeeApp {
 
     private void showMainWindow() {
         mainFrame = new JFrame("MotorPH Employee Management");
-        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        mainFrame.addWindowListener(new java.awt.event.WindowAdapter() {
+        @Override
+        public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+            int response = JOptionPane.showConfirmDialog(mainFrame, 
+                "Are you sure you want to exit?", "Confirm Exit", 
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if (response == JOptionPane.YES_OPTION) {
+                System.exit(0);
+            }
+        }
+    });
+
+
         mainFrame.setSize(1100, 500);
         mainFrame.setLocationRelativeTo(null);
 
@@ -118,6 +142,12 @@ public class MotorPHEmployeeApp {
         JButton addNewEmployeeButton = new JButton("Add Employee");
         addNewEmployeeButton.addActionListener(e -> openAddEmployeeDialog());
 
+        JButton updateEmployeeButton = new JButton("Update Employee");
+        updateEmployeeButton.addActionListener(e -> openUpdateEmployeeDialog());
+
+        JButton deleteButton = new JButton("Delete Employee");
+        deleteButton.addActionListener(e -> openDeleteEmployeeDialog());
+
         JButton viewEmployeeDetailsButton = new JButton("View Employee");
         viewEmployeeDetailsButton.addActionListener(e -> openEmployeeDetailDialog());
 
@@ -125,6 +155,10 @@ public class MotorPHEmployeeApp {
         actionButtonPanel.setLayout(new BoxLayout(actionButtonPanel, BoxLayout.Y_AXIS));
         actionButtonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         actionButtonPanel.add(addNewEmployeeButton);
+        actionButtonPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        actionButtonPanel.add(updateEmployeeButton);
+        actionButtonPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        actionButtonPanel.add(deleteButton);
         actionButtonPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         actionButtonPanel.add(viewEmployeeDetailsButton);
 
@@ -206,73 +240,181 @@ public class MotorPHEmployeeApp {
     }
 }
 
-    private void openAddEmployeeDialog() {
-        JTextField employeeNumberInput = new JTextField();
-        JTextField lastNameInput = new JTextField();
-        JTextField firstNameInput = new JTextField();
-        JTextField sssNumberInput = new JTextField();
-        JTextField philHealthNumberInput = new JTextField();
-        JTextField tinNumberInput = new JTextField();
-        JTextField pagIbigNumberInput = new JTextField();
-        JTextField employmentStatusInput = new JTextField();
-        JTextField jobPositionInput = new JTextField();
-        JTextField salaryInput = new JTextField();
+  private void openAddEmployeeDialog() {
+   
+    JTextField employeeNumberInput = new JTextField();
+    JTextField lastNameInput = new JTextField();
+    JTextField firstNameInput = new JTextField();
+    JTextField birthdayInput = new JTextField();
+    JTextField addressInput = new JTextField();
+    JTextField phoneInput = new JTextField();
+    JTextField sssNumberInput = new JTextField();
+    JTextField philHealthNumberInput = new JTextField();
+    JTextField tinNumberInput = new JTextField();
+    JTextField pagIbigNumberInput = new JTextField();
+    JTextField employmentStatusInput = new JTextField();
+    JTextField jobPositionInput = new JTextField();
+    JTextField supervisorInput = new JTextField();
+    JTextField salaryInput = new JTextField();
+    
+    
+    JTextField riceInput = new JTextField("1500");
+    JTextField phoneAllowanceInput = new JTextField("1000");
+    JTextField clothingInput = new JTextField("1000");
 
-        JPanel inputFormPanel = new JPanel(new GridLayout(0, 2));
-        inputFormPanel.add(new JLabel("Employee No:")); inputFormPanel.add(employeeNumberInput);
-        inputFormPanel.add(new JLabel("Last Name:")); inputFormPanel.add(lastNameInput);
-        inputFormPanel.add(new JLabel("First Name:")); inputFormPanel.add(firstNameInput);
-        inputFormPanel.add(new JLabel("SSS No:")); inputFormPanel.add(sssNumberInput);
-        inputFormPanel.add(new JLabel("PhilHealth No:")); inputFormPanel.add(philHealthNumberInput);
-        inputFormPanel.add(new JLabel("TIN:")); inputFormPanel.add(tinNumberInput);
-        inputFormPanel.add(new JLabel("Pag-IBIG No:")); inputFormPanel.add(pagIbigNumberInput);
-        inputFormPanel.add(new JLabel("Status:")); inputFormPanel.add(employmentStatusInput);
-        inputFormPanel.add(new JLabel("Position:")); inputFormPanel.add(jobPositionInput);
-        inputFormPanel.add(new JLabel("Salary:")); inputFormPanel.add(salaryInput);
+    JPanel inputFormPanel = new JPanel(new GridLayout(0, 2));
+    inputFormPanel.add(new JLabel("Employee No:")); inputFormPanel.add(employeeNumberInput);
+    inputFormPanel.add(new JLabel("Last Name:")); inputFormPanel.add(lastNameInput);
+    inputFormPanel.add(new JLabel("First Name:")); inputFormPanel.add(firstNameInput);
+    inputFormPanel.add(new JLabel("Birthday (M/D/YY):")); inputFormPanel.add(birthdayInput);
+    inputFormPanel.add(new JLabel("Address:")); inputFormPanel.add(addressInput);
+    inputFormPanel.add(new JLabel("Phone Number:")); inputFormPanel.add(phoneInput);
+    inputFormPanel.add(new JLabel("SSS No:")); inputFormPanel.add(sssNumberInput);
+    inputFormPanel.add(new JLabel("PhilHealth No:")); inputFormPanel.add(philHealthNumberInput);
+    inputFormPanel.add(new JLabel("TIN:")); inputFormPanel.add(tinNumberInput);
+    inputFormPanel.add(new JLabel("Pag-IBIG No:")); inputFormPanel.add(pagIbigNumberInput);
+    inputFormPanel.add(new JLabel("Status:")); inputFormPanel.add(employmentStatusInput);
+    inputFormPanel.add(new JLabel("Position:")); inputFormPanel.add(jobPositionInput);
+    inputFormPanel.add(new JLabel("Immediate Supervisor:")); inputFormPanel.add(supervisorInput);
+    inputFormPanel.add(new JLabel("Basic Salary:")); inputFormPanel.add(salaryInput);
+    inputFormPanel.add(new JLabel("Rice Subsidy:")); inputFormPanel.add(riceInput);
+    inputFormPanel.add(new JLabel("Phone Allowance:")); inputFormPanel.add(phoneAllowanceInput);
+    inputFormPanel.add(new JLabel("Clothing Allowance:")); inputFormPanel.add(clothingInput);
 
-        int result = JOptionPane.showConfirmDialog(mainFrame, inputFormPanel, "Add Employee", JOptionPane.OK_CANCEL_OPTION);
-        if (result == JOptionPane.OK_OPTION) {
-            String empNo = employeeNumberInput.getText().trim();
-            String salaryText = salaryInput.getText().trim();
+    int result = JOptionPane.showConfirmDialog(mainFrame, inputFormPanel, "Add Employee", 
+        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-            if (empNo.isEmpty() || !empNo.matches("\\d{5,6}")) {
-                JOptionPane.showMessageDialog(mainFrame, "Employee Number must only be 5 to 6 digits.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+    if (result == JOptionPane.OK_OPTION) {
+        
+        String empNo = employeeNumberInput.getText().trim();
+        String salaryText = salaryInput.getText().trim();
 
-            if (salaryText.isEmpty() || !salaryText.matches("\\d+(\\.\\d{1,2})?")) {
-                JOptionPane.showMessageDialog(mainFrame, "Salary must be a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+        if (empNo.isEmpty() || !empNo.matches("\\d{5,6}")) {
+            JOptionPane.showMessageDialog(mainFrame, 
+                "Employee Number must be 5 to 6 digits.", 
+                "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-            double basicSalary = Double.parseDouble(salaryText);
-            double rice = 1500, phone = 1000, clothing = 1000;
-            double gross = basicSalary / 2;
-            double hourly = basicSalary / 21 / 8;
+        if (salaryText.isEmpty() || !salaryText.matches("\\d+(\\.\\d{1,2})?")) {
+            JOptionPane.showMessageDialog(mainFrame, 
+                "Salary must be a valid number.", 
+                "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-            String[] employee = {
-                empNo,
-                lastNameInput.getText().trim(),
-                firstNameInput.getText().trim(),
-                sssNumberInput.getText().trim(),
-                philHealthNumberInput.getText().trim(),
-                tinNumberInput.getText().trim(),
-                pagIbigNumberInput.getText().trim(),
-                employmentStatusInput.getText().trim(),
-                jobPositionInput.getText().trim(),
-                salaryText,
-                String.valueOf(rice),
-                String.valueOf(phone),
-                String.valueOf(clothing),
-                String.format("%.2f", gross),
-                String.format("%.2f", hourly)
-            };
+        
+        double basicSalary = Double.parseDouble(salaryText);
+        double gross = basicSalary / 2;
+        double hourly = basicSalary / 21 / 8; 
 
-            employeeData.add(employee);
-            refreshTable();
+        
+        String[] employee = {
+            empNo,                                     // Employee ID
+            lastNameInput.getText().trim(),            // Last Name
+            firstNameInput.getText().trim(),           // First Name
+            birthdayInput.getText().trim(),            // Birthday
+            addressInput.getText().trim(),             // Address
+            phoneInput.getText().trim(),               // Phone Number
+            sssNumberInput.getText().trim(),          // SSS
+            philHealthNumberInput.getText().trim(),    // Philhealth
+            tinNumberInput.getText().trim(),           // TIN
+            pagIbigNumberInput.getText().trim(),       // Pag-ibig
+            employmentStatusInput.getText().trim(),    // Status
+            jobPositionInput.getText().trim(),         // Position
+            supervisorInput.getText().trim(),          // Immediate Supervisor
+            salaryText,                                // Basic Salary
+            riceInput.getText().trim(),                // Rice Subsidy
+            phoneAllowanceInput.getText().trim(),      // Phone Allowance
+            clothingInput.getText().trim(),            // Clothing Allowance
+            String.format("%.2f", gross),              // Gross Semi Monthly Rate
+            String.format("%.2f", hourly)             // Hourly Rate
+        };
+
+       
+        saveEmployeeToCSV(employee, "C:\\Users\\Michiko\\Desktop\\MotorPHEmployeeApp\\MotorPHEmployeeApp\\src\\employee_data.csv");
+        
+       
+        employeeData.add(employee);
+        refreshTable();
+    
+
+
+           
         }
     }
 
+    private void openUpdateEmployeeDialog() {
+    int selectedRow = employeeTable.getSelectedRow();
+    if (selectedRow == -1) {
+        JOptionPane.showMessageDialog(mainFrame, 
+            "Please select an employee to update", 
+            "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    String[] employee = employeeData.get(selectedRow);
+    String empId = employee[0];
+
+    JPanel panel = new JPanel(new GridLayout(0, 2));
+    JTextField firstNameField = new JTextField(employee[2]);
+    JTextField lastNameField = new JTextField(employee[1]);
+    JTextField salaryField = new JTextField(employee[9]);
+
+    panel.add(new JLabel("First Name:"));
+    panel.add(firstNameField);
+    panel.add(new JLabel("Last Name:"));
+    panel.add(lastNameField);
+    panel.add(new JLabel("Salary:"));
+    panel.add(salaryField);
+
+    int result = JOptionPane.showConfirmDialog(
+        mainFrame, 
+        panel, 
+        "Update Employee " + empId,
+        JOptionPane.OK_CANCEL_OPTION,
+        JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result == JOptionPane.OK_OPTION) {
+        Map<String, String> updates = new HashMap<>();
+        updates.put("firstName", firstNameField.getText());
+        updates.put("lastName", lastNameField.getText());
+        
+       
+        try {
+            Double.parseDouble(salaryField.getText());
+            updates.put("basicSalary", salaryField.getText());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(mainFrame, 
+                "Invalid salary format", 
+                "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        updateEmployee(
+            "C:\\Users\\Michiko\\Desktop\\MotorPHEmployeeApp\\MotorPHEmployeeApp\\src\\employee_data.csv",
+            empId, 
+            updates
+        );
+    }
+}
+
+    private void openDeleteEmployeeDialog() {
+    String empIdToDelete = JOptionPane.showInputDialog(null, "Enter Employee ID to delete:");
+
+    if (empIdToDelete != null && !empIdToDelete.trim().isEmpty()) {
+        int confirm = JOptionPane.showConfirmDialog(null,
+                "Are you sure you want to delete employee ID: " + empIdToDelete + "?",
+                "Confirm Deletion", JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            deleteEmployee("C:\\Users\\Michiko\\Desktop\\MotorPHEmployeeApp\\MotorPHEmployeeApp\\src\\employee_data.csv", empIdToDelete); 
+            refreshTable(); 
+        }
+    }
+}
+   
     private void openEmployeeDetailDialog() {
         int selectedRow = employeeTable.getSelectedRow();
         if (selectedRow == -1) {
@@ -321,7 +463,7 @@ public class MotorPHEmployeeApp {
     }
 
     private void showBasicSalaryComputation(String empId, double basicSalary) {
-        // Finds employee data
+      
         String[] employeeInfo = employeeData.stream()
             .filter(e -> e[0].equals(empId))
             .findFirst()
@@ -387,7 +529,7 @@ public class MotorPHEmployeeApp {
         return;
     }
         
-        // Check if employee has attendance data
+        
         if (!attendanceMap.containsKey(empId)) {
             JOptionPane.showMessageDialog(mainFrame, 
                 "No attendance data found for employee " + empId + ".\nPlease check if the employee ID matches the attendance records.", 
@@ -407,7 +549,7 @@ public class MotorPHEmployeeApp {
         double totalHours = 0.0;
         double totalDeductions = 0.0;
 
-        // Find employee data for allowances
+        
         String[] employeeInfo = employeeData.stream()
             .filter(e -> e[0].equals(empId))
             .findFirst()
@@ -540,6 +682,49 @@ public class MotorPHEmployeeApp {
         }
     }
 
+    private void saveEmployeeToCSV(String[] employee, String csvFilePath) {
+    try {
+        
+        Path path = Paths.get(csvFilePath);
+        Files.createDirectories(path.getParent());
+        
+        
+        boolean fileExists = Files.exists(path);
+        boolean needsHeader = !fileExists || Files.size(path) == 0;
+        
+        try (BufferedWriter writer = Files.newBufferedWriter(path, 
+            StandardCharsets.UTF_8, 
+            StandardOpenOption.CREATE, 
+            StandardOpenOption.APPEND)) {
+            
+            
+            if (needsHeader) {
+                String[] headers = {
+                    "Employee No", "Last Name", "First Name", "SSS", "PhilHealth",
+                    "TIN", "Pag-IBIG", "Status", "Position", "Salary",
+                    "Rice Allowance", "Phone Allowance", "Clothing Allowance", 
+                    "Semi-Monthly Gross", "Hourly Rate"
+                };
+                writer.write(String.join(",", headers));
+                writer.newLine();
+            }
+            
+            
+            writer.write(String.join(",", employee));
+            writer.newLine();
+            
+            JOptionPane.showMessageDialog(mainFrame, 
+                "Employee saved successfully!", 
+                "Success", JOptionPane.INFORMATION_MESSAGE);
+        }
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(mainFrame, 
+            "Error saving employee:\n" + e.getMessage(), 
+            "Error", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
+}
+
     private void loadEmployeeDataFromCSV(String filePath) {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
@@ -580,6 +765,122 @@ public class MotorPHEmployeeApp {
             JOptionPane.showMessageDialog(mainFrame, "Error loading employee data from CSV: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    private void updateEmployee(String csvFilePath, String empIdToUpdate, Map<String, String> updatedFields) {
+    try {
+
+        Path filePath = Paths.get(csvFilePath);  
+        List<String[]> updatedEmployeeData = new ArrayList<>();
+        boolean found = false;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(csvFilePath))) {
+            String line;
+            boolean isFirstLine = true;
+            
+            while ((line = reader.readLine()) != null) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    updatedEmployeeData.add(line.split(","));
+                    continue;
+                }
+
+                String[] columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                
+                
+                if (columns.length >= 19 && columns[0].equals(empIdToUpdate)) {
+                    found = true;
+                    
+                    
+                    for (Map.Entry<String, String> entry : updatedFields.entrySet()) {
+                        switch (entry.getKey()) {
+                            case "firstName":
+                                columns[1] = entry.getValue();
+                                break;
+                            case "lastName":
+                                columns[2] = entry.getValue();
+                                break;
+                            case "basicSalary":
+                                columns[13] = entry.getValue();
+                                break;
+                            
+                        }
+                    }
+                    
+                    
+                    if (updatedFields.containsKey("basicSalary")) {
+                        double basicSalary = Double.parseDouble(columns[13]);
+                        columns[17] = String.format("%.2f", basicSalary * 1.5); // Example gross calculation
+                        columns[18] = String.format("%.2f", basicSalary / 160); // Example hourly rate
+                    }
+                }
+                
+                updatedEmployeeData.add(columns);
+            }
+        }
+
+        if (!found) {
+            JOptionPane.showMessageDialog(mainFrame, "Employee ID not found: " + empIdToUpdate, 
+                                         "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+      
+    try (BufferedWriter writer = new BufferedWriter(
+    new OutputStreamWriter(
+        new FileOutputStream(csvFilePath), 
+        StandardCharsets.UTF_8))) {
+    
+    for (String[] employee : updatedEmployeeData) {
+        writer.write(String.join(",", employee));
+        writer.newLine();
+    }
+    
+    
+    try (FileChannel channel = FileChannel.open(filePath, StandardOpenOption.WRITE)) {
+        channel.force(true);
+        System.out.println("File changes synced to disk: " + filePath);
+    }
+}
+
+        
+        loadEmployeeDataFromCSV(csvFilePath);
+        JOptionPane.showMessageDialog(mainFrame, "Employee updated successfully!", 
+                                    "Success", JOptionPane.INFORMATION_MESSAGE);
+
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(mainFrame, "Error updating employee!: " + e.getMessage(), 
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(mainFrame, "Invalid number format in salary!", 
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+}
+
+    private void deleteEmployee(String csvFilePath, String empIdToDelete) {
+    List<String> updatedLines = new ArrayList<>();
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(csvFilePath))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (!line.trim().isEmpty() && !line.startsWith(empIdToDelete + ",")) {
+                updatedLines.add(line);
+            }
+        }
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(null, "Error reading employee file!: " + e.getMessage());
+        return;
+    }
+
+    try (PrintWriter writer = new PrintWriter(csvFilePath)) {
+        for (String updatedLine : updatedLines) {
+            writer.println(updatedLine);
+        }
+        JOptionPane.showMessageDialog(null, "Employee deleted successfully!");
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(null, "Error writing to employee file!: " + e.getMessage());
+    }
+}
 
     private static double calculateSSS(double salary) {
         double[][] sssTable = {
